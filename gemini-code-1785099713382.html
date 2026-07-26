@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sleep Reset</title>
+    <!-- PWA Manifest Link -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        .step-hidden { display: none; }
+        #app { transition: all 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 antialiased">
+
+    <!-- App Container -->
+    <div id="app" class="max-w-md w-full bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700">
+        <!-- Step 1: Wake Time -->
+        <div id="step1" class="text-center">
+            <div class="text-4xl mb-4">🌙</div>
+            <h1 class="text-3xl font-bold mb-2 tracking-tight">Sleep Reset</h1>
+            <p class="text-slate-400 mb-8 text-sm">Get your circadian rhythm back on track in under 60 seconds.</p>
+            
+            <label class="block text-left text-sm font-semibold text-slate-300 mb-2">When do you need to wake up?</label>
+            <input type="time" id="wakeTime" value="07:00" class="w-full p-4 bg-slate-900 border border-slate-600 rounded-xl mb-6 text-3xl text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none shadow-inner">
+            
+            <button onclick="nextStep(2)" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl transition-all active:scale-95 shadow-lg shadow-indigo-500/30 mb-4">
+                Continue
+            </button>
+
+            <!-- Custom Install Button (Hidden by default) -->
+            <button id="installBtn" class="hidden w-full bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold py-3 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2">
+                <span>📱</span> Install to Home Screen
+            </button>
+        </div>
+
+        <!-- Step 2: The Issue -->
+        <div id="step2" class="step-hidden">
+            <button onclick="nextStep(1)" class="text-sm text-slate-400 mb-4 hover:text-white transition-colors">← Back</button>
+            <h2 class="text-2xl font-bold mb-6 tracking-tight">What's the main issue?</h2>
+            
+            <!-- Added grid for better spacing with 5 buttons -->
+            <div class="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2">
+                <button onclick="generatePlan('owl')" class="p-4 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-xl text-left transition-all active:scale-95">
+                    <span class="text-xl mr-2">🦉</span> Can't fall asleep until late
+                </button>
+                <button onclick="generatePlan('anxiety')" class="p-4 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-xl text-left transition-all active:scale-95">
+                    <span class="text-xl mr-2">🧠</span> Racing mind / Sleep anxiety
+                </button>
+                <button onclick="generatePlan('bird')" class="p-4 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-xl text-left transition-all active:scale-95">
+                    <span class="text-xl mr-2">🌅</span> Waking up way too early
+                </button>
+                <button onclick="generatePlan('shift')" class="p-4 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-xl text-left transition-all active:scale-95">
+                    <span class="text-xl mr-2">🏭</span> Shift worker / Irregular hours
+                </button>
+                <button onclick="generatePlan('jetlag')" class="p-4 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-xl text-left transition-all active:scale-95">
+                    <span class="text-xl mr-2">✈️</span> Jet lag / Schedule is wrecked
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: The Protocol -->
+        <div id="step3" class="step-hidden">
+            <h2 class="text-2xl font-bold mb-2 tracking-tight text-center">Your Reset Protocol</h2>
+            <p class="text-slate-400 mb-6 text-center text-sm">Follow these steps to lock in your rhythm.</p>
+            
+            <div id="planContent" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2 pb-4">
+                <!-- Injected via JS -->
+            </div>
+            
+            <button onclick="location.reload()" class="w-full mt-4 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition-all active:scale-95">
+                Start Over
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Navigation & Logic ---
+        function nextStep(step) {
+            document.getElementById('step1').classList.add('step-hidden');
+            document.getElementById('step2').classList.add('step-hidden');
+            document.getElementById('step3').classList.add('step-hidden');
+            document.getElementById('step' + step).classList.remove('step-hidden');
+        }
+
+        function generatePlan(issue) {
+            const wakeInput = document.getElementById('wakeTime').value;
+            if (!wakeInput) return;
+
+            const [hours, minutes] = wakeInput.split(':').map(Number);
+            const wakeDate = new Date();
+            wakeDate.setHours(hours, minutes, 0);
+            
+            const bedTime = new Date(wakeDate.getTime() - (8 * 60 * 60 * 1000));
+            const fastTime = new Date(bedTime.getTime() - (2 * 60 * 60 * 1000));
+            const lightDimTime = new Date(bedTime.getTime() - (1.5 * 60 * 60 * 1000));
+
+            const formatTime = (date) => date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+            let planHtml = "";
+
+            // 1. Caffeine Rule (For Owls, Jetlag, Shift Workers)
+            if (['jetlag', 'owl', 'shift'].includes(issue)) {
+                const caffeineCutoff = new Date(bedTime.getTime() - (10 * 60 * 60 * 1000));
+                planHtml += `
+                    <div class="p-4 bg-slate-900 border-l-4 border-red-500 rounded-r-xl">
+                        <div class="text-red-400 font-bold mb-1">${formatTime(caffeineCutoff)} — Caffeine Cutoff</div>
+                        <p class="text-sm text-slate-300">Zero caffeine after this time. It has a quarter-life of 12 hours.</p>
+                    </div>
+                `;
+            }
+
+            // 2. Fasting Rule (Universal)
+            planHtml += `
+                <div class="p-4 bg-slate-900 border-l-4 border-amber-500 rounded-r-xl">
+                    <div class="text-amber-500 font-bold mb-1">${formatTime(fastTime)} — Fasting Cutoff</div>
+                    <p class="text-sm text-slate-300">Stop eating. Fasting for 2 hours before bed resets your gut's circadian clock.</p>
+                </div>
+            `;
+
+            // 3. Shift Worker Light Blocking Rule
+            if (issue === 'shift') {
+                planHtml += `
+                    <div class="p-4 bg-slate-900 border-l-4 border-zinc-500 rounded-r-xl">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="bg-zinc-700 text-zinc-300 text-xs px-2 py-0.5 rounded font-bold">SHIFT PROTOCOL</span>
+                            <div class="text-zinc-400 font-bold">Block The Sun</div>
+                        </div>
+                        <p class="text-sm text-slate-300">Wear dark sunglasses on your commute home. Sunlight hitting your eyes will trick your brain into wakefulness. Use blackout curtains.</p>
+                    </div>
+                `;
+            }
+
+            // 4. Dim Lights Rule (Universal)
+            planHtml += `
+                <div class="p-4 bg-slate-900 border-l-4 border-indigo-500 rounded-r-xl">
+                    <div class="text-indigo-400 font-bold mb-1">${formatTime(lightDimTime)} — Dim Lights</div>
+                    <p class="text-sm text-slate-300">Switch to warm, low lighting. Turn on device blue-light filters to allow melatonin release.</p>
+                </div>
+            `;
+
+            // 5. CBT-I Cognitive Rule (For Anxiety and Owls)
+            if (['anxiety', 'owl'].includes(issue)) {
+                planHtml += `
+                    <div class="p-4 bg-slate-900 border-l-4 border-emerald-500 rounded-r-xl">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="bg-emerald-900 text-emerald-400 text-xs px-2 py-0.5 rounded font-bold">CBT-I PSYCHOLOGY</span>
+                            <div class="text-emerald-400 font-bold">The 20-Minute Rule</div>
+                        </div>
+                        <p class="text-sm text-slate-300">If you are in bed and feeling anxious for more than 20 minutes, <b>leave the bed</b>. Read in dim light until you are falling-asleep tired. Break the association between your bed and anxiety.</p>
+                    </div>
+                `;
+            }
+
+            // 6. Bedtime & Wake Rules (Universal)
+            planHtml += `
+                <div class="p-4 bg-slate-900 border-l-4 border-blue-500 rounded-r-xl">
+                    <div class="text-blue-400 font-bold mb-1">${formatTime(bedTime)} — Target Bedtime</div>
+                    <p class="text-sm text-slate-300">Be in bed. Ensure your room is cool (around 65°F / 18°C) and completely dark.</p>
+                </div>
+                <div class="p-4 bg-slate-900 border-l-4 border-yellow-500 rounded-r-xl">
+                    <div class="text-yellow-500 font-bold mb-1">${formatTime(wakeDate)} — Morning Light</div>
+                    <p class="text-sm text-slate-300">Get 10-15 mins of natural light in your eyes immediately upon waking to lock in this schedule.</p>
+                </div>
+            `;
+
+            document.getElementById('planContent').innerHTML = planHtml;
+            nextStep(3);
+        }
+
+        // --- PWA Service Worker Registration ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service worker registered!'))
+                    .catch(err => console.log('Service worker registration failed: ', err));
+            });
+        }
+
+        // --- Custom Install Button Logic ---
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.classList.remove('hidden');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            installBtn.classList.add('hidden');
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredPrompt = null;
+            installBtn.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
